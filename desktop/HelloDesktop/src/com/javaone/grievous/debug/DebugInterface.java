@@ -41,6 +41,12 @@ public class DebugInterface {
         scheduleRepaint();
     }
 
+    public void setLastProbabilityDistribution(int[] probabilityDistribution) {
+        if(System.currentTimeMillis() % 2000 < 1000) {
+            setLastImage(probabilityDistribution);
+        }
+    }
+
     private void scheduleRepaint() {
         if(imagePanel != null) {
             imagePanel.repaint();

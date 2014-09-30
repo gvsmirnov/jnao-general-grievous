@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.javaone.grievous.Main.out;
 
@@ -25,6 +27,7 @@ public class GeneralGrievous implements Runnable {
     private static final int IMAGE_POSITION = 6;
 
     private static final long LATENCY = 20;
+    private static final int LIGHTSABER_COLOR = 0x69feff;
 
     private final String moduleName = "SITH_LORD_WANNABE_" + UUID.randomUUID();
 
@@ -83,11 +86,23 @@ public class GeneralGrievous implements Runnable {
         ByteBuffer buffer = (ByteBuffer) imageDescriptor.get(IMAGE_POSITION);
 
         int[] image = convertByteBuffer(buffer);
+        int[] probabilityDistribution = detectLightsaber(image);
 
         debugInterface.setLastImage(image);
+        debugInterface.setLastProbabilityDistribution(probabilityDistribution);
+    }
+
+    private int[] detectLightsaber(int[] image) {
+        return IntStream.of(image).
+                map(pixel -> Math.abs(pixel - LIGHTSABER_COLOR)).
+                //map(diff -> (diff & 0xFF + diff & 0xFF00 + diff & 0xFF0000) / 0xFFFFFF).
+                toArray();
     }
 
     private static int[] convertByteBuffer(ByteBuffer buffer) {
+
+        //TODO: streams, maybe?
+
         int[] result = new int[buffer.position() / 3];
         byte[] byteArray = buffer.array();
 
