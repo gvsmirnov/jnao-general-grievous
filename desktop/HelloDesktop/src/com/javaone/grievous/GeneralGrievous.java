@@ -19,10 +19,12 @@ public class GeneralGrievous implements Runnable {
 
     private static final int CAMERA_ID = 0;
     private static final int RESOLUTION_ID = 2;
-    private static final int COLORSPACE_RGB = 3;
+    private static final int COLORSPACE_RGB = 11;
+
     private static final int FPS = 20;
     private static final int IMAGE_POSITION = 6;
-    private static final long LATENCY = 30;
+
+    private static final long LATENCY = 20;
 
     private final String moduleName = "SITH_LORD_WANNABE_" + UUID.randomUUID();
 
@@ -79,6 +81,25 @@ public class GeneralGrievous implements Runnable {
 
     private void processImage(List<Object> imageDescriptor) {
         ByteBuffer buffer = (ByteBuffer) imageDescriptor.get(IMAGE_POSITION);
-        debugInterface.setLastImage(buffer);
+
+        int[] image = convertByteBuffer(buffer);
+
+        debugInterface.setLastImage(image);
+    }
+
+    private static int[] convertByteBuffer(ByteBuffer buffer) {
+        int[] result = new int[buffer.position() / 3];
+        byte[] byteArray = buffer.array();
+
+        for(int i = 0; i < byteArray.length; i +=3) {
+
+            int rgb = byteArray[i];
+            rgb = (rgb << 8) + byteArray[i + 1];
+            rgb = (rgb << 8) + byteArray[i + 2];
+
+            result[i / 3] = rgb;
+        }
+
+        return result;
     }
 }

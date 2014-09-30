@@ -3,7 +3,6 @@ package com.javaone.grievous.debug;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.nio.ByteBuffer;
 
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
@@ -34,22 +33,10 @@ public class DebugInterface {
         });
     }
 
-    private static int[] convertByteBuffer(ByteBuffer buffer) {
-        //FIXME!
+    public void setLastImage(int[] pixels) {
 
-        int[] result = new int[buffer.position()];
-        byte[] byteArray = buffer.array();
-
-        for(int i = 0; i < byteArray.length; i ++) {
-            result[i] = byteArray[i];
-        }
-
-        return result;
-    }
-
-    public void setLastImage(ByteBuffer buffer) {
         lastImage = new BufferedImage(DEBUG_WIDTH, DEBUG_HEIGHT, BufferedImage.TYPE_3BYTE_BGR);
-        lastImage.setRGB(0, 0, DEBUG_WIDTH, DEBUG_HEIGHT, convertByteBuffer(buffer), 0, DEBUG_WIDTH);
+        lastImage.setRGB(0, 0, DEBUG_WIDTH, DEBUG_HEIGHT, pixels, 0, DEBUG_WIDTH);
 
         scheduleRepaint();
     }
