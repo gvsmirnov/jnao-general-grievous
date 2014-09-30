@@ -24,7 +24,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/libs/qimessaging-2.1.0.19-win32-vs2010.jar!/" />
+          <root url="jar://$MODULE_DIR$/libs/qimessaging-2.1.0.19-mac64.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
