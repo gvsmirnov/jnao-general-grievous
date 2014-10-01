@@ -1,6 +1,5 @@
 package com.javaone.grievous;
 
-import com.aldebaran.qimessaging.CallError;
 import com.aldebaran.qimessaging.Future;
 import com.aldebaran.qimessaging.Session;
 import com.javaone.grievous.VideoFeedProvider.FileVideoFeedProvider;
