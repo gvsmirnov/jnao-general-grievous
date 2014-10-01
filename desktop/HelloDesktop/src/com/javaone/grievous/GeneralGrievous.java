@@ -1,16 +1,10 @@
 package com.javaone.grievous;
 
 import com.aldebaran.qimessaging.CallError;
-import com.aldebaran.qimessaging.Session;
-import com.aldebaran.qimessaging.helpers.al.ALVideoDevice;
 import com.javaone.grievous.debug.DebugInterface;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.javaone.grievous.Main.out;
 
@@ -19,28 +13,20 @@ import static com.javaone.grievous.Main.out;
  */
 public class GeneralGrievous implements Runnable {
 
-    private static final int CAMERA_ID = 0;
-    private static final int RESOLUTION_ID = 2;
-    private static final int COLORSPACE_RGB = 11;
-
-    private static final int FPS = 20;
-    private static final int IMAGE_POSITION = 6;
-
     private static final long LATENCY = 20;
-    private static final int LIGHTSABER_COLOR = 0x69feff;
+    private static final int LIGHTSABER_COLOR = 0x69FEFF;
 
-    private final String moduleName = "SITH_LORD_WANNABE_" + UUID.randomUUID();
+    private final VideoFeedProvider provider;
 
-    private ALVideoDevice videoDevice;
-    private String subscriptionId;
     private volatile boolean stopped;
 
     private DebugInterface debugInterface;
 
-    public void start(Session session) throws InterruptedException, CallError {
-        videoDevice = new ALVideoDevice(session);
-        subscriptionId = videoDevice.subscribeCamera(moduleName, CAMERA_ID, RESOLUTION_ID, COLORSPACE_RGB, FPS);
+    public GeneralGrievous(VideoFeedProvider provider) {
+        this.provider = provider;
+    }
 
+    public void start() throws InterruptedException, CallError {
         setUpDebugInterface();
 
         new Thread(this).start();
@@ -52,11 +38,9 @@ public class GeneralGrievous implements Runnable {
     }
 
     public void stop() throws InterruptedException, CallError {
-
         out("Stopping");
 
         stopped = true;
-        videoDevice.unsubscribe(subscriptionId);
     }
 
     @Override
@@ -75,17 +59,11 @@ public class GeneralGrievous implements Runnable {
     }
 
     private void cycle() throws CallError, InterruptedException {
-        List<Object> image = videoDevice.getImageRemote(subscriptionId);
-
-        processImage(image);
-
-        videoDevice.releaseImage(subscriptionId);
+        processImage(provider.getCurrentFrame());
     }
 
-    private void processImage(List<Object> imageDescriptor) {
-        ByteBuffer buffer = (ByteBuffer) imageDescriptor.get(IMAGE_POSITION);
-
-        int[] image = convertByteBuffer(buffer);
+    private void processImage(byte[] buffer) {
+        int[] image = encodeColors(buffer);
         int[] probabilityDistribution = detectLightsaber(image);
 
         debugInterface.setLastImage(image);
@@ -95,22 +73,30 @@ public class GeneralGrievous implements Runnable {
     private int[] detectLightsaber(int[] image) {
         return IntStream.of(image).
                 map(pixel -> Math.abs(pixel - LIGHTSABER_COLOR)).
-                //map(diff -> (diff & 0xFF + diff & 0xFF00 + diff & 0xFF0000) / 0xFFFFFF).
+                map(GeneralGrievous::detectLuminance).
+                map(greyscale -> greyscale * 0x010101).
                 toArray();
     }
 
-    private static int[] convertByteBuffer(ByteBuffer buffer) {
+    private static int detectLuminance(int pixel) {
+        int luminance =
+               pixel & 0xFF +
+               (pixel >> 8) & 0xFF +
+               (pixel >> 16) & 0xFF;
 
-        //TODO: streams, maybe?
+        luminance /= 3;
 
-        int[] result = new int[buffer.position() / 3];
-        byte[] byteArray = buffer.array();
+        return luminance;
+    }
 
-        for(int i = 0; i < byteArray.length; i +=3) {
+    public static int[] encodeColors(byte[] buffer) {
+        int[] result = new int[buffer.length / 3];
 
-            int rgb = byteArray[i];
-            rgb = (rgb << 8) + byteArray[i + 1];
-            rgb = (rgb << 8) + byteArray[i + 2];
+        for(int i = 0; i < buffer.length; i +=3) {
+
+            int rgb = buffer[i];
+            rgb = (rgb << 8) + buffer[i + 1];
+            rgb = (rgb << 8) + buffer[i + 2];
 
             result[i / 3] = rgb;
         }
