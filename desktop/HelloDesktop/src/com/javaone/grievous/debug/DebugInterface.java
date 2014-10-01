@@ -17,34 +17,38 @@ public class DebugInterface {
     private JFrame debugFrame;
     private Panel imagePanel;
 
-    private volatile BufferedImage lastImage;
+    private volatile Image lastImage;
+    private volatile Image lastDistribution;
 
     public void start() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                debugFrame = new JFrame();
-                debugFrame.setSize(DEBUG_WIDTH, DEBUG_HEIGHT);
-                debugFrame.setVisible(true);
-                debugFrame.setDefaultCloseOperation(EXIT_ON_CLOSE);
+        SwingUtilities.invokeLater(() -> {
+            debugFrame = new JFrame();
+            debugFrame.setName("Force Vision");
+            debugFrame.setSize(DEBUG_WIDTH, DEBUG_HEIGHT);
+            debugFrame.setVisible(true);
+            debugFrame.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-                imagePanel = new Panel();
-                debugFrame.add(imagePanel);
-            }
+            imagePanel = new Panel();
+            debugFrame.add(imagePanel);
         });
     }
 
     public void setLastImage(int[] pixels) {
 
-        lastImage = new BufferedImage(DEBUG_WIDTH, DEBUG_HEIGHT, BufferedImage.TYPE_3BYTE_BGR);
-        lastImage.setRGB(0, 0, DEBUG_WIDTH, DEBUG_HEIGHT, pixels, 0, DEBUG_WIDTH);
+        lastImage = toImage(pixels);
 
         scheduleRepaint();
     }
 
+    private Image toImage(int[] pixels) {
+        BufferedImage image = new BufferedImage(DEBUG_WIDTH, DEBUG_HEIGHT, BufferedImage.TYPE_3BYTE_BGR);
+        image.setRGB(0, 0, DEBUG_WIDTH, DEBUG_HEIGHT, pixels, 0, DEBUG_WIDTH);
+
+        return image;
+    }
+
     public void setLastProbabilityDistribution(int[] probabilityDistribution) {
-        if(System.currentTimeMillis() % 2000 < 1000) {
-            setLastImage(probabilityDistribution);
-        }
+        lastDistribution = toImage(probabilityDistribution);
     }
 
     private void scheduleRepaint() {
@@ -57,7 +61,10 @@ public class DebugInterface {
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
 
-            g.drawImage(lastImage, 0, 0, debugFrame);
+            Image image = System.currentTimeMillis() % 2000 < 1000 ?
+                    lastImage : lastDistribution;
+
+            g.drawImage(image, 0, 0, debugFrame);
         }
     }
 }
